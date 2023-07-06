@@ -1,0 +1,814 @@
+SQL QUERIES OF ANALYZING USER BEHAVIOUR ON INSTAGRAM
+
+TASK 1 : 
+Q) Find the 5 oldest users.
+
+QUERY -- select * from users order by created_at asc limit 5;
+
+OUTPUT -- 
++------+------------------+---------------------+
+| id   | username         | created_at          |
++------+------------------+---------------------+
+|   80 | Darby_Herzog     | 2016-05-06 00:14:00 |
+|   67 | Emilio_Bernier52 | 2016-05-06 13:04:00 |
+|   63 | Elenor88         | 2016-05-08 01:30:00 |
+|   95 | Nicole71         | 2016-05-09 17:30:00 |
+|   38 | Jordyn.Jacobson2 | 2016-05-14 07:56:00 |
++------+------------------+---------------------+
+
+If you want the no of days for the oldest users then
+
+QUERY -- 
+select *,datediff(current_timestamp(),created_at) no_of_days from users order by created_at asc limit 5;
+
+OUTPUT --
++------+------------------+---------------------+------------+
+| id   | username         | created_at          | no_of_days |
++------+------------------+---------------------+------------+
+|   80 | Darby_Herzog     | 2016-05-06 00:14:00 |       2555 |
+|   67 | Emilio_Bernier52 | 2016-05-06 13:04:00 |       2555 |
+|   63 | Elenor88         | 2016-05-08 01:30:00 |       2553 |
+|   95 | Nicole71         | 2016-05-09 17:30:00 |       2552 |
+|   38 | Jordyn.Jacobson2 | 2016-05-14 07:56:00 |       2547 |
++------+------------------+---------------------+------------+
+
+TASK 2 :
+Q) What day of the week do most users register on? We need to figure out when to schedule an ad campgain 
+
+QUERY 1 -- 
+select dayname(created_at) as Day_of_week,count(*) as Total_Registrations 
+from users group by Day_of_week order by Total_Registrations desc;
+
+OUTPUT --
++-------------+---------------------+
+| Day_of_week | Total_Registrations |
++-------------+---------------------+
+| Thursday    |                  16 |
+| Sunday      |                  16 |
+| Friday      |                  15 |
+| Tuesday     |                  14 |
+| Monday      |                  14 |
+| Wednesday   |                  13 |
+| Saturday    |                  12 |
++-------------+---------------------+
+
+QUERY 2 --
+select date_format(created_at,'%W') day_of_week,count(*) total_registrations from users group by day_of_week
+order by total_registrations desc;
+
+OUTPUT --
++-------------+---------------------+
+| day_of_week | total_registrations |
++-------------+---------------------+
+| Thursday    |                  16 |
+| Sunday      |                  16 |
+| Friday      |                  15 |
+| Tuesday     |                  14 |
+| Monday      |                  14 |
+| Wednesday   |                  13 |
+| Saturday    |                  12 |
++-------------+---------------------+
+
+If you need only the day of the week do most users register on
+QUERY -- 
+select * from (select name_of_day,count(name_of_day),rank() over (order by count(name_of_day) desc) rnk from 
+(select *,dayname(created_at) name_of_day from users) as T
+group by name_of_day)as W where rnk=1;
+
+OUTPUT --
++-------------+--------------------+-----+
+| name_of_day | count(name_of_day) | rnk |
++-------------+--------------------+-----+
+| Thursday    |                 16 |   1 |
+| Sunday      |                 16 |   1 |
++-------------+--------------------+-----+
+
+TASK 3 :
+Q)We want to target our inactive users with an email campaign. 
+Find the users who have never posted a photo.
+
+QUERY --
+select username from users where id not in (select user_id from photos);
+
+OUTPUT --
++---------------------+
+| username            |
++---------------------+
+| Aniya_Hackett       |
+| Kasandra_Homenick   |
+| Jaclyn81            |
+| Rocio33             |
+| Maxwell.Halvorson   |
+| Tierra.Trantow      |
+| Pearl7              |
+| Ollie_Ledner37      |
+| Mckenna17           |
+| David.Osinski47     |
+| Morgan.Kassulke     |
+| Linnea59            |
+| Duane60             |
+| Julien_Schmidt      |
+| Mike.Auer39         |
+| Franco_Keebler64    |
+| Nia_Haag            |
+| Hulda.Macejkovic    |
+| Leslie67            |
+| Janelle.Nikolaus81  |
+| Darby_Herzog        |
+| Esther.Zulauf61     |
+| Bartholome.Bernhard |
+| Jessyca_West        |
+| Esmeralda.Mraz57    |
+| Bethany20           |
++---------------------+
+
+TASK 4 :
+Q)We're running a new contest to see who can get the most likes on a single photo. WHO WON?
+
+QUERY 1 --
+select * from 
+(select *,dense_rank() over (order by no_of_likes desc) rnk from
+(select photo_id,count(l.user_id) no_of_likes,u.username,p.image_url    
+from likes l join photos p on l.photo_id=p.id
+join users u on p.user_id=u.id
+group by photo_id order by count(user_id) desc) as T) as W where rnk=1;
+
+OUTPUT --
++----------+-------------+---------------+---------------------+-----+
+| photo_id | no_of_likes | username      | image_url           | rnk |
++----------+-------------+---------------+---------------------+-----+
+|      145 |          48 | Zack_Kemmer93 | https://jarret.name |   1 |
++----------+-------------+---------------+---------------------+-----+
+
+QUERY 2 --
+select u.username,p.id,p.image_url,count(l.user_id) Total_likes    
+from likes l join photos p on l.photo_id=p.id
+join users u on p.user_id=u.id
+group by photo_id order by count(user_id) desc ; 
+
+OUTPUT --
++-----------------------+------+------------------------+-------------+
+| username              | id   | image_url              | Total_likes |
++-----------------------+------+------------------------+-------------+
+| Zack_Kemmer93         |  145 | https://jarret.name    |          48 |
+| Malinda_Streich       |  127 | https://celestine.name |          43 |
+| Adelle96              |  182 | https://dorcas.biz     |          43 |
+| Seth46                |  123 | http://shannon.org     |          42 |
+| Presley_McClure       |   30 | http://kenny.com       |          41 |
+| Annalise.McKenzie16   |   52 | https://hershel.com    |          41 |
+| Elenor88              |  174 | https://delbert.net    |          41 |
+| Kathryn80             |  192 | https://anahi.info     |          41 |
+| Delpha.Kihn           |   61 | https://dejon.name     |          41 |
+| Meggie_Doyle          |  147 | https://adela.com      |          41 |
+| Javonte83             |  256 | https://kaela.name     |          41 |
+| Harley_Lind18         |   13 | https://fred.com       |          40 |
+| Cesar93               |  161 | https://clare.org      |          40 |
+| Aurelie71             |  153 | http://janie.com       |          40 |
+| Damon35               |  244 | http://freeda.biz      |          40 |
+| Irwin.Larson          |   97 | https://carolanne.com  |          40 |
+| Kenneth64             |   62 | https://rigoberto.net  |          39 |
+| Yazmin_Mills95        |  107 | https://everette.biz   |          39 |
+| Janet.Armstrong       |  118 | http://whitney.net     |          39 |
+| Janet.Armstrong       |  119 | http://garrison.name   |          39 |
+| Donald.Fritsch        |  199 | http://linnie.com      |          39 |
+| Donald.Fritsch        |  201 | https://jane.net       |          39 |
+| Colten.Harris76       |  205 | http://ted.info        |          39 |
+| Rick29                |  227 | http://nigel.biz       |          39 |
+| Eveline95             |   66 | http://lionel.net      |          39 |
+| Yvette.Gottlieb91     |  100 | https://brook.com      |          39 |
+| Kelsi26               |  110 | https://cesar.com      |          39 |
+| Florence99            |  180 | https://vivien.com     |          39 |
+| Alexandro35           |   44 | http://golden.org      |          39 |
+| Zack_Kemmer93         |  144 | https://roderick.name  |          39 |
+| Kenton_Kirlin         |    4 | http://oleta.net       |          38 |
+| Tabitha_Schamberger11 |   23 | http://madison.net     |          38 |
+| Dereck65              |   41 | https://adella.net     |          38 |
+| Eveline95             |   69 | http://harvey.info     |          38 |
+| Cesar93               |  162 | https://malcolm.name   |          38 |
+| Adelle96              |  183 | http://hettie.net      |          38 |
+| Jaylan.Lakin          |  196 | http://stan.biz        |          38 |
+| Aracely.Johnston98    |  210 | http://penelope.info   |          38 |
+| Andre_Purdy85         |    7 | https://selina.name    |          38 |
+| Eveline95             |   63 | http://megane.biz      |          38 |
+| Aurelie71             |  150 | http://ruben.net       |          38 |
+| Jayson65              |  169 | http://annabelle.org   |          38 |
+| Kenton_Kirlin         |    3 | http://vicky.biz       |          38 |
+| Justina.Gaylord27     |   37 | http://camille.name    |          38 |
+| Donald.Fritsch        |  197 | http://jarred.net      |          38 |
+| Dario77               |   81 | https://jacinto.org    |          38 |
+| Aurelie71             |  155 | http://pearl.info      |          38 |
+| Alexandro35           |   43 | https://easter.net     |          37 |
+| Billy52               |   49 | http://estevan.org     |          37 |
+| Florence99            |  178 | http://devon.info      |          37 |
+| Donald.Fritsch        |  198 | http://jovanny.net     |          37 |
+| Clint27               |  230 | http://destini.net     |          37 |
+| Frederik_Rice         |  241 | https://sid.biz        |          37 |
+| Eveline95             |   71 | https://tito.name      |          37 |
+| Granville_Kutch       |  133 | https://edyth.com      |          37 |
+| Alysa22               |  212 | http://cynthia.info    |          37 |
+| Rick29                |  225 | https://celestino.name |          37 |
+| Keenan.Schamberger60  |  248 | https://maggie.info    |          37 |
+| Alexandro35           |   42 | https://cielo.info     |          37 |
+| Seth46                |  120 | https://olga.org       |          37 |
+| Arely_Bogan63         |   16 | https://maudie.org     |          37 |
+| Dereck65              |   40 | https://tyshawn.com    |          37 |
+| Norbert_Carroll35     |   57 | http://kirk.org        |          37 |
+| Hailee26              |   59 | http://rylan.biz       |          37 |
+| Jaime53               |   87 | http://emery.net       |          37 |
+| Colten.Harris76       |  203 | http://trever.org      |          37 |
+| Tabitha_Schamberger11 |   25 | http://darron.info     |          36 |
+| Annalise.McKenzie16   |   53 | http://collin.com      |          36 |
+| Odessa2               |   58 | https://modesta.info   |          36 |
+| Jaime53               |   90 | https://fanny.net      |          36 |
+| Yvette.Gottlieb91     |  101 | https://gust.net       |          36 |
+| Ressie_Stanton46      |  171 | https://dameon.name    |          36 |
+| Emilio_Bernier52      |  186 | http://sheila.com      |          36 |
+| Karley_Bosco          |  189 | http://reva.com        |          36 |
+| Kenton_Kirlin         |    2 | https://shanon.org     |          36 |
+| Gus93                 |   28 | http://vance.org       |          36 |
+| Norbert_Carroll35     |   56 | http://tristin.name    |          36 |
+| Alysa22               |  211 | https://dimitri.info   |          36 |
+| Javonte83             |  257 | http://dedrick.info    |          36 |
+| Travon.Waters         |   17 | http://annamae.name    |          36 |
+| Maya.Farrell          |  113 | https://darwin.net     |          36 |
+| Janet.Armstrong       |  116 | https://maymie.net     |          36 |
+| Cesar93               |  166 | http://kaleigh.biz     |          36 |
+| Travon.Waters         |   21 | https://lisa.com       |          36 |
+| Jaime53               |   85 | http://fabiola.org     |          36 |
+| Lennie_Hartmann40     |  106 | https://trycia.com     |          36 |
+| Florence99            |  177 | https://nolan.name     |          36 |
+| Erick5                |  190 | https://llewellyn.info |          36 |
+| Delfina_VonRueden68   |  222 | http://germaine.org    |          36 |
+| Justina.Gaylord27     |   36 | http://kennith.net     |          35 |
+| Billy52               |   48 | http://tressie.info    |          35 |
+| Darwin29              |   80 | https://holden.com     |          35 |
+| Dario77               |   84 | https://trinity.biz    |          35 |
+| Yvette.Gottlieb91     |  103 | http://barton.name     |          35 |
+| Maya.Farrell          |  112 | https://lina.biz       |          35 |
+| Janet.Armstrong       |  117 | http://joanie.name     |          35 |
+| Malinda_Streich       |  126 | http://lia.biz         |          35 |
+| Cesar93               |  158 | http://leo.com         |          35 |
+| Colten.Harris76       |  206 | http://keshawn.org     |          35 |
+| Clint27               |  232 | https://brittany.org   |          35 |
+| Clint27               |  234 | https://devonte.name   |          35 |
+| Eveline95             |   67 | http://danyka.net      |          35 |
+| Travon.Waters         |   19 | http://miracle.info    |          35 |
+| Travon.Waters         |   20 | http://emmet.com       |          35 |
+| Tabitha_Schamberger11 |   24 | http://annie.name      |          35 |
+| Norbert_Carroll35     |   55 | https://deondre.com    |          35 |
+| Josianne.Friesen      |   77 | https://jarret.info    |          35 |
+| Dario77               |   82 | https://geoffrey.info  |          35 |
+| Adelle96              |  181 | https://hilda.info     |          35 |
+| Colten.Harris76       |  204 | http://emilie.net      |          35 |
+| Arely_Bogan63         |   14 | https://gerhard.biz    |          35 |
+| Gerard79              |  136 | https://marianna.info  |          35 |
+| Mariano_Koch3         |  137 | https://roel.org       |          35 |
+| Milford_Gleichner42   |  213 | http://princess.org    |          35 |
+| Willie_Leuschke       |  243 | https://erik.com       |          35 |
+| Arely_Bogan63         |   15 | https://sherwood.net   |          34 |
+| Dereck65              |   39 | http://ralph.name      |          34 |
+| Alexandro35           |   45 | http://kendall.biz     |          34 |
+| Jaime53               |   86 | https://bryce.org      |          34 |
+| Jaime53               |   91 | http://lottie.net      |          34 |
+| Irwin.Larson          |   99 | https://kayden.biz     |          34 |
+| Harrison.Beatty50     |  128 | http://laila.info      |          34 |
+| Mariano_Koch3         |  138 | http://julia.info      |          34 |
+| Aurelie71             |  154 | http://myron.org       |          34 |
+| Ressie_Stanton46      |  170 | http://ephraim.com     |          34 |
+| Aracely.Johnston98    |  209 | https://humberto.org   |          34 |
+| Yvette.Gottlieb91     |  102 | http://bridie.name     |          34 |
+| Gerard79              |  134 | https://isaias.biz     |          34 |
+| Clint27               |  233 | https://madaline.name  |          34 |
+| Clint27               |  235 | https://blanche.net    |          34 |
+| Alexandro35           |   46 | https://glenda.info    |          34 |
+| Eveline95             |   64 | http://emmalee.org     |          34 |
+| Eveline95             |   70 | http://aiden.org       |          34 |
+| Kaley9                |   94 | http://virginia.org    |          34 |
+| Seth46                |  121 | https://donavon.org    |          34 |
+| Malinda_Streich       |  124 | http://kendrick.net    |          34 |
+| Elenor88              |  173 | https://jasmin.biz     |          34 |
+| Delfina_VonRueden68   |  221 | http://lucio.org       |          34 |
+| Keenan.Schamberger60  |  249 | https://cecilia.net    |          34 |
+| Imani_Nicolas17       |  252 | http://jennie.com      |          34 |
+| Eveline95             |   68 | https://woodrow.com    |          34 |
+| Eveline95             |   74 | http://verner.org      |          34 |
+| Josianne.Friesen      |   78 | http://einar.net       |          34 |
+| Josianne.Friesen      |   79 | http://terry.info      |          34 |
+| Irwin.Larson          |   98 | https://margarita.info |          34 |
+| Mariano_Koch3         |  141 | http://quinten.info    |          34 |
+| Aurelie71             |  149 | https://lila.biz       |          34 |
+| Donald.Fritsch        |  200 | http://dino.name       |          34 |
+| Delfina_VonRueden68   |  217 | https://timmy.info     |          34 |
+| Clint27               |  231 | https://mariano.net    |          34 |
+| Harley_Lind18         |   11 | https://marcelino.com  |          33 |
+| Eveline95             |   65 | http://nathan.net      |          33 |
+| Lennie_Hartmann40     |  105 | https://mariam.com     |          33 |
+| Rafael.Hickle2        |  111 | http://charlie.com     |          33 |
+| Mariano_Koch3         |  140 | https://earline.info   |          33 |
+| Zack_Kemmer93         |  146 | https://cathrine.com   |          33 |
+| Florence99            |  176 | https://jessy.name     |          33 |
+| Delfina_VonRueden68   |  220 | https://colt.org       |          33 |
+| Gus93                 |   29 | http://ignacio.net     |          33 |
+| Josianne.Friesen      |   75 | https://elmore.org     |          33 |
+| Jordyn.Jacobson2      |  109 | http://arthur.name     |          33 |
+| Cesar93               |  157 | https://carmella.com   |          33 |
+| Willie_Leuschke       |  242 | https://jadyn.name     |          33 |
+| Presley_McClure       |   32 | http://kurtis.info     |          33 |
+| Eveline95             |   72 | https://julian.net     |          33 |
+| Jaime53               |   88 | https://marian.biz     |          33 |
+| Seth46                |  122 | http://moses.biz       |          33 |
+| Malinda_Streich       |  125 | https://carey.com      |          33 |
+| Peter.Stehr0          |  148 | https://demarco.com    |          33 |
+| Aurelie71             |  152 | http://rickey.name     |          33 |
+| Cesar93               |  163 | https://lesly.com      |          33 |
+| Adelle96              |  185 | http://jody.biz        |          33 |
+| Rick29                |  226 | http://violet.info     |          33 |
+| Nicole71              |  245 | http://ayden.name      |          33 |
+| Alek_Watsica          |  255 | https://xzavier.org    |          33 |
+| Justina.Gaylord27     |   34 | https://henderson.com  |          32 |
+| Jaime53               |   89 | https://kennedi.org    |          32 |
+| Zack_Kemmer93         |  142 | https://dolores.org    |          32 |
+| Josianne.Friesen      |   76 | http://kasandra.com    |          32 |
+| Elenor88              |  172 | https://julianne.org   |          32 |
+| Alek_Watsica          |  253 | http://ryleigh.info    |          32 |
+| Maya.Farrell          |  114 | https://aliyah.biz     |          32 |
+| Delfina_VonRueden68   |  219 | http://hollis.com      |          32 |
+| Justina.Gaylord27     |   35 | http://bonnie.info     |          32 |
+| Hailee26              |   60 | https://noemie.com     |          32 |
+| Irwin.Larson          |   96 | http://roger.info      |          32 |
+| Aurelie71             |  151 | https://alia.name      |          32 |
+| Cesar93               |  164 | https://roberta.net    |          32 |
+| Sam52                 |  168 | http://delpha.com      |          32 |
+| Delfina_VonRueden68   |  218 | http://susie.info      |          32 |
+| Clint27               |  229 | https://emilia.org     |          32 |
+| Clint27               |  237 | http://mekhi.name      |          32 |
+| Andre_Purdy85         |    9 | https://branson.biz    |          31 |
+| Gus93                 |   27 | https://reece.net      |          31 |
+| Janet.Armstrong       |  115 | http://euna.info       |          31 |
+| Sam52                 |  167 | http://blanca.org      |          31 |
+| Emilio_Bernier52      |  187 | http://germaine.name   |          31 |
+| Kathryn80             |  191 | http://ellen.info      |          31 |
+| Donald.Fritsch        |  202 | http://laney.name      |          31 |
+| Colten.Harris76       |  207 | http://ole.info        |          31 |
+| Rick29                |  224 | http://helena.name     |          31 |
+| Nicole71              |  246 | https://kathleen.biz   |          31 |
+| Dereck65              |   38 | http://alena.net       |          31 |
+| Annalise.McKenzie16   |   54 | https://clair.com      |          31 |
+| Eveline95             |   73 | https://mafalda.org    |          31 |
+| Dario77               |   83 | http://paxton.com      |          31 |
+| Kaley9                |   93 | https://jensen.name    |          31 |
+| Yvette.Gottlieb91     |  104 | https://karina.biz     |          31 |
+| Cesar93               |  159 | http://jedediah.net    |          31 |
+| Cesar93               |  160 | http://sedrick.net     |          31 |
+| Kenton_Kirlin         |    5 | https://jennings.biz   |          31 |
+| Andre_Purdy85         |    6 | https://quinn.biz      |          31 |
+| Presley_McClure       |   31 | http://remington.name  |          31 |
+| Aurelie71             |  156 | http://victoria.biz    |          31 |
+| Tomas.Beatty93        |  250 | http://ayla.org        |          31 |
+| Travon.Waters         |   18 | https://mac.org        |          31 |
+| Clint27               |  228 | https://noble.net      |          31 |
+| Frederik_Rice         |  239 | https://devan.com      |          31 |
+| Alek_Watsica          |  254 | https://darien.name    |          31 |
+| Harley_Lind18         |   10 | https://elenor.name    |          30 |
+| Kathryn80             |  193 | https://javonte.org    |          30 |
+| Clint27               |  236 | http://cali.net        |          30 |
+| Frederik_Rice         |  240 | https://jarrett.name   |          30 |
+| Gus93                 |   26 | http://saige.com       |          30 |
+| Harrison.Beatty50     |  132 | http://kailee.org      |          30 |
+| Billy52               |   47 | http://dominic.biz     |          30 |
+| Zack_Kemmer93         |  143 | https://aimee.info     |          30 |
+| Florence99            |  179 | http://ora.net         |          30 |
+| Adelle96              |  184 | http://rico.biz        |          30 |
+| Emilio_Bernier52      |  188 | https://mariane.org    |          30 |
+| Delfina_VonRueden68   |  216 | http://deontae.org     |          30 |
+| Harley_Lind18         |   12 | http://felicity.name   |          29 |
+| Jaime53               |   92 | http://lacy.biz        |          29 |
+| Cesar93               |  165 | https://estell.info    |          29 |
+| Milford_Gleichner42   |  214 | https://ruthie.info    |          29 |
+| Jordyn.Jacobson2      |  108 | http://boris.biz       |          29 |
+| Gerard79              |  135 | http://rosetta.net     |          29 |
+| Harrison.Beatty50     |  129 | http://buddy.com       |          29 |
+| Harrison.Beatty50     |  130 | http://americo.biz     |          29 |
+| Harrison.Beatty50     |  131 | http://lurline.info    |          29 |
+| Justina.Gaylord27     |   33 | https://alisha.com     |          29 |
+| Annalise.McKenzie16   |   51 | https://abagail.com    |          29 |
+| Kathryn80             |  194 | http://florine.org     |          29 |
+| Katarina.Dibbert      |  208 | https://ford.biz       |          29 |
+| Delfina_VonRueden68   |  215 | https://evan.name      |          29 |
+| Keenan.Schamberger60  |  247 | https://helmer.org     |          28 |
+| Tabitha_Schamberger11 |   22 | https://brooklyn.name  |          28 |
+| Aiyana_Hoeger         |   95 | https://ariel.net      |          28 |
+| Elenor88              |  175 | https://norval.com     |          28 |
+| Tomas.Beatty93        |  251 | https://elyssa.biz     |          28 |
+| Andre_Purdy85         |    8 | http://malvina.org     |          27 |
+| Billy52               |   50 | http://zena.com        |          27 |
+| Clint27               |  238 | http://adela.com       |          27 |
+| Mariano_Koch3         |  139 | https://seamus.org     |          27 |
+| Kathryn80             |  195 | http://marcellus.info  |          26 |
+| Kenton_Kirlin         |    1 | http://elijah.biz      |          25 |
+| Delfina_VonRueden68   |  223 | http://howard.net      |          25 |
++-----------------------+------+------------------------+-------------+
+
+TASK 5 :
+Q) Our Investors want to know...How many times does the average user post? 
+(total number of photos/total number of users)
+
+QUERY -- 
+select round((select count(*) from photos)/(select count(*) from users),2) 
+as avg_user_post_in_times from photos p join users u on p.user_id=u.id limit 1;
+
+OUTPUT -- 
++------------------------+
+| avg_user_post_in_times |
++------------------------+
+|                   2.57 |
++------------------------+
+
+TASK 6 :
+Q) user ranking by postings higher to lower
+
+QUERY 1 --
+select u.username,count(p.image_url) from photos p join users u on 
+p.user_id=u.id group by user_id order by count(p.image_url) desc;
+
+OUTPUT --
++-----------------------+--------------------+
+| username              | count(p.image_url) |
++-----------------------+--------------------+
+| Eveline95             |                 12 |
+| Clint27               |                 11 |
+| Cesar93               |                 10 |
+| Delfina_VonRueden68   |                  9 |
+| Aurelie71             |                  8 |
+| Jaime53               |                  8 |
+| Donald.Fritsch        |                  6 |
+| Yvette.Gottlieb91     |                  5 |
+| Zack_Kemmer93         |                  5 |
+| Harrison.Beatty50     |                  5 |
+| Travon.Waters         |                  5 |
+| Alexandro35           |                  5 |
+| Mariano_Koch3         |                  5 |
+| Colten.Harris76       |                  5 |
+| Justina.Gaylord27     |                  5 |
+| Kenton_Kirlin         |                  5 |
+| Kathryn80             |                  5 |
+| Adelle96              |                  5 |
+| Janet.Armstrong       |                  5 |
+| Florence99            |                  5 |
+| Josianne.Friesen      |                  5 |
+| Andre_Purdy85         |                  4 |
+| Harley_Lind18         |                  4 |
+| Gus93                 |                  4 |
+| Tabitha_Schamberger11 |                  4 |
+| Malinda_Streich       |                  4 |
+| Dereck65              |                  4 |
+| Seth46                |                  4 |
+| Elenor88              |                  4 |
+| Irwin.Larson          |                  4 |
+| Dario77               |                  4 |
+| Annalise.McKenzie16   |                  4 |
+| Billy52               |                  4 |
+| Rick29                |                  4 |
+| Arely_Bogan63         |                  3 |
+| Presley_McClure       |                  3 |
+| Gerard79              |                  3 |
+| Emilio_Bernier52      |                  3 |
+| Norbert_Carroll35     |                  3 |
+| Maya.Farrell          |                  3 |
+| Frederik_Rice         |                  3 |
+| Keenan.Schamberger60  |                  3 |
+| Alek_Watsica          |                  3 |
+| Jordyn.Jacobson2      |                  2 |
+| Javonte83             |                  2 |
+| Aracely.Johnston98    |                  2 |
+| Alysa22               |                  2 |
+| Milford_Gleichner42   |                  2 |
+| Sam52                 |                  2 |
+| Ressie_Stanton46      |                  2 |
+| Hailee26              |                  2 |
+| Willie_Leuschke       |                  2 |
+| Nicole71              |                  2 |
+| Kaley9                |                  2 |
+| Tomas.Beatty93        |                  2 |
+| Lennie_Hartmann40     |                  2 |
+| Aiyana_Hoeger         |                  1 |
+| Darwin29              |                  1 |
+| Katarina.Dibbert      |                  1 |
+| Rafael.Hickle2        |                  1 |
+| Jayson65              |                  1 |
+| Kelsi26               |                  1 |
+| Kenneth64             |                  1 |
+| Delpha.Kihn           |                  1 |
+| Granville_Kutch       |                  1 |
+| Odessa2               |                  1 |
+| Yazmin_Mills95        |                  1 |
+| Damon35               |                  1 |
+| Karley_Bosco          |                  1 |
+| Erick5                |                  1 |
+| Meggie_Doyle          |                  1 |
+| Imani_Nicolas17       |                  1 |
+| Peter.Stehr0          |                  1 |
+| Jaylan.Lakin          |                  1 |
++-----------------------+--------------------+
+
+QUERY 2--
+select u.username,count(p.image_url)
+from photos p join users u on p.user_id=u.id group by user_id order by count(p.image_url) desc;
+
+QUERY 3 --
+select *,dense_rank() over (order by no_of_posts desc) rnk from
+(select p.user_id,u.username,count(p.user_id) no_of_posts
+from photos p join users u on p.user_id=u.id group by user_id) as T;
+
+TASK 7 :
+Q) Total Posts by users 
+
+QUERY -- 
+select count(*) from photos;
+
+OUTPUT --
++----------+
+| count(*) |
++----------+
+|      257 |
++----------+
+
+TASK 8 :
+Q) Total numbers of users who have posted at least one time
+
+QUERY --
+select count(user_id) total_number_of_users_with_posts from 
+(select user_id,count(user_id) no_of_posts from photos group by user_id having no_of_posts>=1) as T;
+
+OUTPUT --
++----------------------------------+
+| total_number_of_users_with_posts |
++----------------------------------+
+|                               74 |
++----------------------------------+
+
+TASK 9 :
+Q) A brand wants to know which hashtags to use in a post. What are the top 5 most commonly used hashtags?
+
+QUERY --
+select tag_name,count(tag_id) total from tags t join photo_tags pt
+on t.id=pt.tag_id group by t.id order by total desc;
+
+OUTPUT --
++-------------+-------+
+| tag_name    | total |
++-------------+-------+
+| smile       |    59 |
+| beach       |    42 |
+| party       |    39 |
+| fun         |    38 |
+| concert     |    24 |
+| lol         |    24 |
+| food        |    24 |
+| hair        |    23 |
+| happy       |    22 |
+| beauty      |    20 |
+| dreamy      |    20 |
+| drunk       |    19 |
+| fashion     |    19 |
+| sunset      |    19 |
+| sunrise     |    17 |
+| landscape   |    17 |
+| style       |    17 |
+| photography |    16 |
+| stunning    |    16 |
+| delicious   |    15 |
+| foodie      |    11 |
++-------------+-------+
+
+TASK 10 :
+Q) We have a small problem with bots on our site. 
+Find users who have liked every single photo on the site
+
+QUERY 1 --
+SELECT users.id,username, COUNT(users.id) As total_likes_by_user
+FROM users
+JOIN likes ON users.id = likes.user_id
+GROUP BY users.id
+HAVING total_likes_by_user = (SELECT COUNT(*) FROM photos);
+
+OUTPUT --
++------+--------------------+---------------------+
+| id   | username           | total_likes_by_user |
++------+--------------------+---------------------+
+|    5 | Aniya_Hackett      |                 257 |
+|   14 | Jaclyn81           |                 257 |
+|   21 | Rocio33            |                 257 |
+|   24 | Maxwell.Halvorson  |                 257 |
+|   36 | Ollie_Ledner37     |                 257 |
+|   41 | Mckenna17          |                 257 |
+|   54 | Duane60            |                 257 |
+|   57 | Julien_Schmidt     |                 257 |
+|   66 | Mike.Auer39        |                 257 |
+|   71 | Nia_Haag           |                 257 |
+|   75 | Leslie67           |                 257 |
+|   76 | Janelle.Nikolaus81 |                 257 |
+|   91 | Bethany20          |                 257 |
++------+--------------------+---------------------+
+
+QUERY 2-- 
+select u.id,u.username,count(l.photo_id) total_likes_by_user from users u join likes l on 
+u.id=l.user_id group by u.id order by total_likes_by_user desc limit 13;
+
+OUTPUT --
++------+--------------------+---------------------+
+| id   | username           | total_likes_by_user |
++------+--------------------+---------------------+
+|   21 | Rocio33            |                 257 |
+|   71 | Nia_Haag           |                 257 |
+|    5 | Aniya_Hackett      |                 257 |
+|   66 | Mike.Auer39        |                 257 |
+|   41 | Mckenna17          |                 257 |
+|   14 | Jaclyn81           |                 257 |
+|   57 | Julien_Schmidt     |                 257 |
+|   24 | Maxwell.Halvorson  |                 257 |
+|   76 | Janelle.Nikolaus81 |                 257 |
+|   75 | Leslie67           |                 257 |
+|   54 | Duane60            |                 257 |
+|   91 | Bethany20          |                 257 |
+|   36 | Ollie_Ledner37     |                 257 |
++------+--------------------+---------------------+
+
+TASK 11 :
+Q) We also have a problem with celebrities. Find users who have never commented on a photo
+
+QUERY --
+select username,case when id not in (select user_id from comments) then 'None' end comment_text
+from users where id not in (select user_id from comments);
+
+OUTPUT --
++---------------------+--------------+
+| username            | comment_text |
++---------------------+--------------+
+| Kenton_Kirlin       | None         |
+| Kasandra_Homenick   | None         |
+| Eveline95           | None         |
+| Tierra.Trantow      | None         |
+| Jaime53             | None         |
+| Pearl7              | None         |
+| David.Osinski47     | None         |
+| Morgan.Kassulke     | None         |
+| Mariano_Koch3       | None         |
+| Linnea59            | None         |
+| Aurelie71           | None         |
+| Cesar93             | None         |
+| Florence99          | None         |
+| Franco_Keebler64    | None         |
+| Hulda.Macejkovic    | None         |
+| Donald.Fritsch      | None         |
+| Darby_Herzog        | None         |
+| Esther.Zulauf61     | None         |
+| Bartholome.Bernhard | None         |
+| Delfina_VonRueden68 | None         |
+| Clint27             | None         |
+| Jessyca_West        | None         |
+| Esmeralda.Mraz57    | None         |
++---------------------+--------------+
+
+TASK 12 :
+Q) Are we overrun with bots and celebrity accounts? 
+Find the percentage of our users who have either never commented on a photo or have commented on every photo.
+
+QUERY --
+select tA.totalA as 'Number of users who ever commented',
+(tB.totalB/(select count(*) from users))*100 as '%',
+tB.totalB as 'Number of users who likes every photos' from 
+(select count(*) as totalA from 
+  (select username,comment_text from users u left join comments c 
+  on u.id=c.user_id group by u.id having comment_text is null) as 
+  total_number_of_users_without_comments) as tA 
+  join
+(select count(*) as totalB from
+  (select u.id,username,count(u.id) as total_likes_by_user from 
+  users u join likes l on u.id=l.user_id
+  group by u.id having total_likes_by_user = 
+  (select count(*) from photos)) as total_number_of_users_likes_every_photos)
+  as tB;
+
+OUTPUT --
++------------------------------------+---------+----------------------------------------+
+| Number of users who ever commented | %       | Number of users who likes every photos |
++------------------------------------+---------+----------------------------------------+
+|                                 23 | 13.0000 |                                     13 |
++------------------------------------+---------+----------------------------------------+
+
+TASK 13 :
+Q) Find users who have ever commented on a photo
+
+QUERY --
+select username,comment_text from users u left join comments c 
+on u.id=c.user_id group by u.id having comment_text is not null;
+
+OUTPUT --
++-----------------------+---------------------------------------+
+| username              | comment_text                          |
++-----------------------+---------------------------------------+
+| Andre_Purdy85         | corrupti ut quaerat                   |
+| Harley_Lind18         | tenetur accusantium officiis          |
+| Arely_Bogan63         | delectus eum fugit                    |
+| Aniya_Hackett         | in autem incidunt                     |
+| Travon.Waters         | veniam ea architecto                  |
+| Tabitha_Schamberger11 | aut repellat a                        |
+| Gus93                 | natus sunt ut                         |
+| Presley_McClure       | ut aut cumque                         |
+| Justina.Gaylord27     | officia voluptate voluptatem          |
+| Dereck65              | itaque voluptas tempora               |
+| Alexandro35           | cupiditate eaque minima               |
+| Jaclyn81              | velit et aut                          |
+| Billy52               | animi velit possimus                  |
+| Annalise.McKenzie16   | voluptatem necessitatibus aut         |
+| Norbert_Carroll35     | velit vitae dolores                   |
+| Odessa2               | quidem quia consequatur               |
+| Hailee26              | minima beatae totam                   |
+| Delpha.Kihn           | quaerat doloremque aut                |
+| Rocio33               | cupiditate qui consequatur            |
+| Kenneth64             | quia et minima                        |
+| Maxwell.Halvorson     | inventore amet sequi                  |
+| Josianne.Friesen      | soluta dolores quam                   |
+| Darwin29              | est unde quia                         |
+| Dario77               | aperiam et nisi                       |
+| Kaley9                | voluptatum quos voluptatibus          |
+| Aiyana_Hoeger         | necessitatibus similique veritatis    |
+| Irwin.Larson          | culpa odit eveniet                    |
+| Yvette.Gottlieb91     | distinctio ad quas                    |
+| Lennie_Hartmann40     | dolorem architecto voluptatem         |
+| Ollie_Ledner37        | officia distinctio dolores            |
+| Yazmin_Mills95        | in et explicabo                       |
+| Jordyn.Jacobson2      | ipsa ab tempore                       |
+| Kelsi26               | odio enim autem                       |
+| Rafael.Hickle2        | culpa vitae sit                       |
+| Mckenna17             | magnam est autem                      |
+| Maya.Farrell          | libero voluptate distinctio           |
+| Janet.Armstrong       | voluptatem quod quasi                 |
+| Seth46                | quia dolorem voluptas                 |
+| Malinda_Streich       | ipsum at nam                          |
+| Harrison.Beatty50     | accusamus et aliquam                  |
+| Granville_Kutch       | ipsam dolore eos                      |
+| Gerard79              | sint quia et                          |
+| Zack_Kemmer93         | cumque similique voluptatem           |
+| Duane60               | et dolores distinctio                 |
+| Meggie_Doyle          | et possimus esse                      |
+| Peter.Stehr0          | animi eos et                          |
+| Julien_Schmidt        | ut ipsam dolores                      |
+| Sam52                 | molestias laborum provident           |
+| Jayson65              | facere repellat velit                 |
+| Ressie_Stanton46      | qui veritatis eligendi                |
+| Elenor88              | illo cumque omnis                     |
+| Adelle96              | fuga nulla vitae                      |
+| Mike.Auer39           | est non tempore                       |
+| Emilio_Bernier52      | est in officiis                       |
+| Karley_Bosco          | eum mollitia odit                     |
+| Erick5                | voluptatibus vero et                  |
+| Nia_Haag              | quis aliquam deleniti                 |
+| Kathryn80             | consectetur et ut                     |
+| Jaylan.Lakin          | iusto veritatis repellendus           |
+| Leslie67              | qui voluptas quia                     |
+| Janelle.Nikolaus81    | quaerat provident iste                |
+| Colten.Harris76       | sit laudantium quas                   |
+| Katarina.Dibbert      | dolorem iste velit                    |
+| Aracely.Johnston98    | accusamus vel est                     |
+| Alysa22               | culpa dolor quos                      |
+| Milford_Gleichner42   | rerum molestiae non                   |
+| Rick29                | eius hic et                           |
+| Bethany20             | sit nulla qui                         |
+| Frederik_Rice         | et et qui                             |
+| Willie_Leuschke       | sed quidem vitae                      |
+| Damon35               | expedita ut aspernatur                |
+| Nicole71              | dolorem eveniet rerum                 |
+| Keenan.Schamberger60  | dolores nihil voluptas                |
+| Tomas.Beatty93        | repellat iure veritatis               |
+| Imani_Nicolas17       | reprehenderit repellat exercitationem |
+| Alek_Watsica          | ex molestias quo                      |
+| Javonte83             | deleniti perferendis in               |
++-----------------------+---------------------------------------+
+
+TASK 14 :
+Q) Are we overrun with bots and celebrity accounts? 
+Find the percentage of our users who have either never commented on a photo or have commented on photos before.
+
+QUERY --
+select tA.totalA as 'Number of users who never commented',
+(tB.totalB/(select count(*) from users))*100 as '%',
+tB.totalB as 'Number of Users who commented on photos'
+from
+(select count(*) as totalA from 
+  (select username,comment_text from users u left join comments c on
+  u.id=c.user_id group by u.id having comment_text is null)
+  as total_number_of_users_without_comments) as tA
+join
+(select count(*) as totalB from
+  (select username,comment_text from users u left join comments c on
+  u.id=c.user_id group by u.id having comment_text is not null)
+  as total_number_of_users_with_comments) as tB;
+
+OUTPUT --
++-------------------------------------+---------+-----------------------------------------+
+| Number of users who never commented | %       | Number of Users who commented on photos |
++-------------------------------------+---------+-----------------------------------------+
+|                                  23 | 77.0000 |                                      77 |
++-------------------------------------+---------+-----------------------------------------+
