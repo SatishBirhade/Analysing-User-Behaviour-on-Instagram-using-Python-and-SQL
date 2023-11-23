@@ -11,7 +11,7 @@ Data cleaning for comments is a critical step in enhancing the dataset's quality
 1) Removed unwanted columns.
 2) Renamed columns for clarity and consistency.
 
-# Python Script : Module-1/data_cleaning.ipynb
+### Python Script : Module-1/data_cleaning.ipynb
 
 ## Task 2: Analysis of User Engagement on Instagram
 
@@ -57,7 +57,7 @@ FROM (
 WHERE post_count > (SELECT COUNT(DISTINCT post_id) * 0.5 FROM posts);
 ### Insight: Identifying users who have commented on more than 50% of the posts helps in recognizing highly engaged users.
 
-## SQL Query : Module-2/SQL QUERIES OF ANALYZING USER BEHAVIOUR ON INSTAGRAM (1).txt
+### SQL Query : Module-2/SQL QUERIES OF ANALYZING USER BEHAVIOUR ON INSTAGRAM (1).txt
 
 ## Conclusion
 The completion of this project involved effective data cleaning and insightful SQL queries to analyze user behavior on Instagram. The results provide valuable information for content creators, marketers, and businesses aiming to understand and optimize their strategies on the platform.
